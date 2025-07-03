@@ -373,5 +373,45 @@ class GymManagementAPITest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # Run tests in order with verbose output
-    unittest.main(argv=['first-arg-is-ignored'], exit=False, verbosity=2)
+    # Create a test suite
+    suite = unittest.TestSuite()
+    
+    # Add tests in order
+    suite.addTest(GymManagementAPITest('test_01_gym_owner_registration'))
+    suite.addTest(GymManagementAPITest('test_02_get_gym_owner'))
+    suite.addTest(GymManagementAPITest('test_03_member_registration'))
+    suite.addTest(GymManagementAPITest('test_04_get_gym_members'))
+    suite.addTest(GymManagementAPITest('test_05_update_payment_status'))
+    suite.addTest(GymManagementAPITest('test_06_toggle_member_active_status'))
+    suite.addTest(GymManagementAPITest('test_07_cash_payment_verification'))
+    suite.addTest(GymManagementAPITest('test_08_delete_member'))
+    
+    # Run the tests
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    
+    # Print summary
+    print("\n=== TEST SUMMARY ===")
+    print(f"Total tests: {result.testsRun}")
+    print(f"Failures: {len(result.failures)}")
+    print(f"Errors: {len(result.errors)}")
+    print(f"Skipped: {len(result.skipped)}")
+    
+    # Print failures and errors if any
+    if result.failures:
+        print("\n=== FAILURES ===")
+        for test, error in result.failures:
+            print(f"\n{test}")
+            print(error)
+    
+    if result.errors:
+        print("\n=== ERRORS ===")
+        for test, error in result.errors:
+            print(f"\n{test}")
+            print(error)
+            
+    # Exit with appropriate code
+    if result.wasSuccessful():
+        print("\n✅ All tests passed successfully!")
+    else:
+        print("\n❌ Some tests failed!")
