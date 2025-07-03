@@ -84,7 +84,7 @@ class WhatsAppService:
         """Generate personalized reminder message"""
         current_month = datetime.now().strftime("%B %Y")
         
-        message = f"""🏋️‍♂️ *{gym_info['gym_name']}* 
+        message = f"""💪 *{gym_info['gym_name']}* 
 
 Hi {member['name']}! 👋
 
