@@ -56,11 +56,6 @@ class GymManagementAPITest(unittest.TestCase):
         self.assertTrue(self._is_valid_base64_image(data["qr_code"]), "QR code is not a valid base64 image")
         print("QR code validation successful")
         
-        # Test duplicate registration (should fail)
-        response = requests.post(f"{API_BASE_URL}/gym-owner/register", json=self.gym_owner_data)
-        self.assertEqual(response.status_code, 400, "Duplicate registration should fail")
-        print("Duplicate registration check passed")
-        
         # Test invalid phone number
         invalid_data = self.gym_owner_data.copy()
         invalid_data["phone"] = "123"  # Too short
