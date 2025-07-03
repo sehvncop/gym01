@@ -5,6 +5,8 @@ import uuid
 from datetime import datetime, date
 import base64
 import re
+import hmac
+import hashlib
 from io import BytesIO
 from PIL import Image
 
@@ -34,6 +36,11 @@ class GymManagementAPITest(unittest.TestCase):
         
         self.gym_id = None
         self.member_id = None
+        
+        # Mock Razorpay data
+        self.razorpay_order_id = f"order_{uuid.uuid4()}"
+        self.razorpay_payment_id = f"pay_{uuid.uuid4()}"
+        self.razorpay_signature = "mock_signature"
     
     def test_01_gym_owner_registration(self):
         """Test gym owner registration API"""
