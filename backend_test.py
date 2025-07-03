@@ -568,6 +568,12 @@ if __name__ == "__main__":
     suite.addTest(GymManagementAPITest('test_06_toggle_member_active_status'))
     suite.addTest(GymManagementAPITest('test_07_cash_payment_verification'))
     suite.addTest(GymManagementAPITest('test_08_delete_member'))
+    suite.addTest(GymManagementAPITest('test_09_razorpay_create_order'))
+    suite.addTest(GymManagementAPITest('test_10_razorpay_payment_verification'))
+    suite.addTest(GymManagementAPITest('test_11_razorpay_webhook'))
+    suite.addTest(GymManagementAPITest('test_12_monthly_fee_reset'))
+    suite.addTest(GymManagementAPITest('test_13_whatsapp_status'))
+    suite.addTest(GymManagementAPITest('test_14_qr_code_urls'))
     
     # Run the tests
     runner = unittest.TextTestRunner(verbosity=2)
