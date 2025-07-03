@@ -101,10 +101,8 @@ class GymManagementAPITest(unittest.TestCase):
             self.test_01_gym_owner_registration()
         
         # Create member data with valid 10-digit phone
-        member_suffix = ''.join([str(i) for i in range(10 - len(self.unique_id[:5]))])
-        member_phone = f"8{self.unique_id[:5].replace('-', '')}{member_suffix}"
-        if len(member_phone) > 10:
-            member_phone = member_phone[:10]
+        import random
+        member_phone = ''.join([str(random.randint(0, 9)) for _ in range(10)])
             
         member_data = {
             "name": f"Test Member {self.unique_id}",
