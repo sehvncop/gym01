@@ -535,11 +535,18 @@ class GymManagementAPITest(unittest.TestCase):
         else:
             print("Could not decode QR code - skipping URL verification")
     
-    def _decode_qr_code(self, base64_string):
-        """Helper method to decode QR code (mock implementation)"""
-        # In a real implementation, we would decode the QR code
-        # For testing purposes, we'll assume it contains the correct URL
-        return BACKEND_URL + "/register-member/some-uuid"
+    def _is_valid_base64_image(self, base64_string):
+        """Helper method to validate base64 image"""
+        try:
+            # Decode base64
+            image_data = base64.b64decode(base64_string)
+            # Try to open as image
+            image = Image.open(BytesIO(image_data))
+            image.verify()
+            return True
+        except Exception as e:
+            print(f"Invalid base64 image: {e}")
+            return False
 
 
 if __name__ == "__main__":
