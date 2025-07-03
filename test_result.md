@@ -205,11 +205,14 @@
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Razorpay order creation, payment verification, webhook handling implemented with API key placeholders"
+      - working: true
+        agent: "testing"
+        comment: "Tested Razorpay integration with both configured and non-configured states. API correctly handles missing API keys with appropriate error messages. Order creation, payment verification, and webhook endpoints all working as expected."
 
   - task: "WhatsApp Integration"
     implemented: true
