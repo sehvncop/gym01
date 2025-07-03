@@ -102,18 +102,17 @@ class GymManagementAPITest(unittest.TestCase):
         if not self.gym_id:
             self.test_01_gym_owner_registration()
         
-        # Create member data
+        # Create member data with valid 10-digit phone
+        member_suffix = ''.join([str(i) for i in range(10 - len(self.unique_id[:5]))])
+        member_phone = f"8{self.unique_id[:5].replace('-', '')}{member_suffix}"
+        if len(member_phone) > 10:
+            member_phone = member_phone[:10]
+            
         member_data = {
             "name": f"Test Member {self.unique_id}",
-            "phone": f"8{self.unique_id.replace('-', '')}456",  # Ensure 10 digits
+            "phone": member_phone,
             "gym_id": self.gym_id
         }
-        
-        # Fix phone number to ensure it's 10 digits
-        if len(member_data["phone"]) > 10:
-            member_data["phone"] = member_data["phone"][:10]
-        elif len(member_data["phone"]) < 10:
-            member_data["phone"] = member_data["phone"].ljust(10, '0')
         
         # Test member registration
         response = requests.post(f"{API_BASE_URL}/member/register", json=member_data)
