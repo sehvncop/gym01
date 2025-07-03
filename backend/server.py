@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, validator
@@ -11,10 +11,21 @@ import qrcode
 import io
 import base64
 from calendar import monthrange
+import razorpay
+import hashlib
+import hmac
 
 # Environment variables
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 DB_NAME = os.environ.get("DB_NAME", "gym_saas")
+
+# Razorpay configuration (with placeholders)
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "YOUR_RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "YOUR_RAZORPAY_KEY_SECRET")
+RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "YOUR_WEBHOOK_SECRET")
+
+# Frontend URL for QR codes
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
 # FastAPI app
 app = FastAPI(title="Gym Management SaaS", version="1.0.0")
@@ -31,6 +42,11 @@ app.add_middleware(
 # MongoDB client
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
+
+# Razorpay client (only initialize if keys are provided)
+razorpay_client = None
+if RAZORPAY_KEY_ID != "YOUR_RAZORPAY_KEY_ID" and RAZORPAY_KEY_SECRET != "YOUR_RAZORPAY_KEY_SECRET":
+    razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 # Pydantic models
 class GymOwnerCreate(BaseModel):
@@ -83,6 +99,18 @@ class MemberResponse(BaseModel):
 class PaymentUpdate(BaseModel):
     payment_method: str  # 'cash' or 'online'
 
+class RazorpayOrderCreate(BaseModel):
+    amount: int  # Amount in paise
+    currency: str = "INR"
+    receipt: Optional[str] = None
+
+class RazorpayPaymentVerify(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+    member_id: str
+    gym_id: str
+
 # Utility functions
 def generate_qr_code(data: str) -> str:
     """Generate QR code and return as base64 string"""
@@ -115,6 +143,22 @@ def calculate_prorated_fee(monthly_fee: float, joining_date: date) -> float:
     
     return round(prorated_amount, 2)
 
+def verify_razorpay_signature(order_id: str, payment_id: str, signature: str) -> bool:
+    """Verify Razorpay payment signature"""
+    if not razorpay_client:
+        return False
+    
+    try:
+        params_dict = {
+            'razorpay_order_id': order_id,
+            'razorpay_payment_id': payment_id,
+            'razorpay_signature': signature
+        }
+        razorpay_client.utility.verify_payment_signature(params_dict)
+        return True
+    except:
+        return False
+
 # API Routes
 @app.get("/")
 async def root():
@@ -132,15 +176,15 @@ async def register_gym_owner(owner: GymOwnerCreate):
         # Generate unique ID
         gym_id = str(uuid.uuid4())
         
-        # Create member registration URL
-        member_registration_url = f"https://your-domain.com/register-member/{gym_id}"
+        # Create member registration URL with current frontend URL
+        member_registration_url = f"{FRONTEND_URL}/register-member/{gym_id}"
         
         # Generate QR codes
         qr_code_data = member_registration_url
         qr_code = generate_qr_code(qr_code_data)
         
-        # Cash verification QR (static for now)
-        cash_verification_url = f"https://your-domain.com/verify-cash-payment/{gym_id}"
+        # Cash verification QR
+        cash_verification_url = f"{FRONTEND_URL}/verify-cash-payment/{gym_id}"
         cash_verification_qr = generate_qr_code(cash_verification_url)
         
         # Create gym owner document
@@ -322,23 +366,157 @@ async def delete_member(gym_id: str, member_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Placeholder for Razorpay integration
+# Razorpay integration endpoints
 @app.post("/api/payment/create-order")
-async def create_payment_order():
-    """Placeholder for Razorpay order creation"""
-    return {
-        "message": "Razorpay integration placeholder",
-        "instructions": "Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to .env file",
-        "status": "not_configured"
-    }
+async def create_payment_order(order_data: RazorpayOrderCreate, gym_id: str, member_id: str):
+    """Create Razorpay payment order"""
+    if not razorpay_client:
+        return {
+            "error": "Razorpay not configured",
+            "message": "Please add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to environment variables",
+            "status": "not_configured"
+        }
+    
+    try:
+        # Verify gym and member exist
+        gym_owner = await db.gym_owners.find_one({"id": gym_id})
+        if not gym_owner:
+            raise HTTPException(status_code=404, detail="Gym not found")
+        
+        collection_name = f"gym_{gym_id.replace('-', '_')}_members"
+        members_collection = db[collection_name]
+        member = await members_collection.find_one({"id": member_id})
+        if not member:
+            raise HTTPException(status_code=404, detail="Member not found")
+        
+        # Create order
+        order_data.receipt = f"gym_{gym_id}_member_{member_id}_{int(datetime.utcnow().timestamp())}"
+        
+        order = razorpay_client.order.create({
+            "amount": order_data.amount,
+            "currency": order_data.currency,
+            "receipt": order_data.receipt,
+            "payment_capture": 1
+        })
+        
+        # Store order in database
+        await db.payment_orders.insert_one({
+            "order_id": order["id"],
+            "gym_id": gym_id,
+            "member_id": member_id,
+            "amount": order_data.amount,
+            "currency": order_data.currency,
+            "status": "created",
+            "created_at": datetime.utcnow()
+        })
+        
+        return {
+            "order_id": order["id"],
+            "amount": order["amount"],
+            "currency": order["currency"],
+            "key_id": RAZORPAY_KEY_ID
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/payment/verify")
-async def verify_payment():
-    """Placeholder for Razorpay payment verification"""
-    return {
-        "message": "Razorpay payment verification placeholder",
-        "status": "not_configured"
-    }
+async def verify_payment(payment_data: RazorpayPaymentVerify):
+    """Verify Razorpay payment"""
+    if not razorpay_client:
+        return {
+            "error": "Razorpay not configured",
+            "status": "not_configured"
+        }
+    
+    try:
+        # Verify signature
+        if not verify_razorpay_signature(
+            payment_data.razorpay_order_id,
+            payment_data.razorpay_payment_id,
+            payment_data.razorpay_signature
+        ):
+            raise HTTPException(status_code=400, detail="Invalid payment signature")
+        
+        # Update payment order status
+        await db.payment_orders.update_one(
+            {"order_id": payment_data.razorpay_order_id},
+            {
+                "$set": {
+                    "payment_id": payment_data.razorpay_payment_id,
+                    "status": "completed",
+                    "verified_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        # Update member payment status
+        collection_name = f"gym_{payment_data.gym_id.replace('-', '_')}_members"
+        members_collection = db[collection_name]
+        
+        await members_collection.update_one(
+            {"id": payment_data.member_id},
+            {
+                "$set": {
+                    "fee_status": "paid",
+                    "payment_method": "online",
+                    "payment_id": payment_data.razorpay_payment_id,
+                    "payment_updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        return {"message": "Payment verified successfully", "status": "success"}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/payment/webhook")
+async def razorpay_webhook(request: Request):
+    """Handle Razorpay webhooks"""
+    if not razorpay_client:
+        return {"status": "not_configured"}
+    
+    try:
+        # Get webhook payload and signature
+        payload = await request.body()
+        signature = request.headers.get('X-Razorpay-Signature', '')
+        
+        # Verify webhook signature
+        if RAZORPAY_WEBHOOK_SECRET != "YOUR_WEBHOOK_SECRET":
+            expected_signature = hmac.new(
+                RAZORPAY_WEBHOOK_SECRET.encode(),
+                payload,
+                hashlib.sha256
+            ).hexdigest()
+            
+            if signature != expected_signature:
+                raise HTTPException(status_code=400, detail="Invalid webhook signature")
+        
+        # Process webhook event
+        import json
+        event_data = json.loads(payload.decode())
+        
+        if event_data.get('event') == 'payment.captured':
+            payment = event_data.get('payload', {}).get('payment', {}).get('entity', {})
+            order_id = payment.get('order_id')
+            
+            if order_id:
+                # Update payment order status
+                await db.payment_orders.update_one(
+                    {"order_id": order_id},
+                    {
+                        "$set": {
+                            "webhook_status": "captured",
+                            "webhook_received_at": datetime.utcnow()
+                        }
+                    }
+                )
+        
+        return {"status": "processed"}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Cash payment verification endpoint
 @app.post("/api/verify-cash-payment/{gym_id}")
@@ -374,6 +552,65 @@ async def verify_cash_payment(gym_id: str, phone: str, name: str):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Monthly fee reset logic (to be called by a scheduler)
+@app.post("/api/admin/reset-monthly-fees")
+async def reset_monthly_fees():
+    """Reset all member fee statuses for new month (admin endpoint)"""
+    try:
+        # Get all gym owners
+        gym_owners_cursor = db.gym_owners.find({})
+        gym_owners = await gym_owners_cursor.to_list(length=None)
+        
+        total_updated = 0
+        
+        for gym_owner in gym_owners:
+            gym_id = gym_owner["id"]
+            collection_name = f"gym_{gym_id.replace('-', '_')}_members"
+            members_collection = db[collection_name]
+            
+            # Reset all active members to unpaid status
+            update_result = await members_collection.update_many(
+                {"is_active": True},
+                {
+                    "$set": {
+                        "fee_status": "unpaid",
+                        "payment_method": None,
+                        "current_month_fee": gym_owner["monthly_fee"],
+                        "month_reset_at": datetime.utcnow()
+                    }
+                }
+            )
+            
+            total_updated += update_result.modified_count
+        
+        return {
+            "message": f"Monthly fees reset for {total_updated} members across {len(gym_owners)} gyms",
+            "total_members_updated": total_updated,
+            "total_gyms": len(gym_owners)
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# WhatsApp integration endpoints (placeholders for now)
+@app.get("/api/whatsapp/status")
+async def get_whatsapp_status():
+    """Get WhatsApp integration status"""
+    return {
+        "connected": False,
+        "message": "WhatsApp integration not configured",
+        "instructions": "WhatsApp automation for monthly reminders will be available once configured"
+    }
+
+@app.post("/api/whatsapp/send-reminders")
+async def send_monthly_reminders():
+    """Send monthly fee reminders to unpaid members"""
+    return {
+        "message": "WhatsApp reminders not configured",
+        "instructions": "WhatsApp automation will be available once configured",
+        "status": "not_configured"
+    }
 
 if __name__ == "__main__":
     import uvicorn
