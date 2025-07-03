@@ -297,40 +297,40 @@
         comment: "Manual payment status marking (cash/online) implemented"
 
   - task: "Routing System"
-    implemented: false
-    working: "NA"
+    implemented: true
+    working: true
     file: "App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
-        comment: "No routing system for QR-based flows (member registration, cash verification)"
+        comment: "React Router implemented for QR-based flows (member registration, cash verification)"
 
   - task: "Cash Payment Verification Portal"
-    implemented: false
-    working: "NA"
-    file: "N/A"
+    implemented: true
+    working: true
+    file: "App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
-        comment: "Web interface for cash payment verification not implemented"
+        comment: "Web interface for cash payment verification implemented with form validation"
 
   - task: "Online Payment Integration"
-    implemented: false
-    working: "NA"
-    file: "N/A"
+    implemented: true
+    working: true
+    file: "App.js, server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
-        comment: "Razorpay frontend integration not implemented"
+        comment: "Razorpay frontend integration implemented with backend order creation and verification"
 
 ## metadata:
   created_by: "main_agent"
