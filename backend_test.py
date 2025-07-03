@@ -373,5 +373,5 @@ class GymManagementAPITest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # Run tests in order
-    unittest.main(argv=['first-arg-is-ignored'], exit=False)
+    # Run tests in order with verbose output
+    unittest.main(argv=['first-arg-is-ignored'], exit=False, verbosity=2)
