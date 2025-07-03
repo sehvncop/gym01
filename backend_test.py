@@ -18,14 +18,12 @@ class GymManagementAPITest(unittest.TestCase):
     def setUp(self):
         """Setup for tests - generate unique data for each test run"""
         # Generate unique identifiers for this test run
+        import random
+        
+        # Create a valid 10-digit phone number (all digits)
+        self.phone = ''.join([str(random.randint(0, 9)) for _ in range(10)])
+        
         self.unique_id = str(uuid.uuid4())[:8]
-        
-        # Create a valid 10-digit phone number
-        phone_suffix = ''.join([str(i) for i in range(10 - len(self.unique_id[:5]))])
-        self.phone = f"9{self.unique_id[:5].replace('-', '')}{phone_suffix}"
-        if len(self.phone) > 10:
-            self.phone = self.phone[:10]
-        
         self.gym_owner_data = {
             "name": f"Test Owner {self.unique_id}",
             "phone": self.phone,
