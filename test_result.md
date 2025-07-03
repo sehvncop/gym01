@@ -235,11 +235,14 @@
     file: "server.py, scheduler.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Automatic monthly fee status reset with scheduler implemented"
+      - working: true
+        agent: "testing"
+        comment: "Tested monthly fee reset endpoint. API correctly resets fee status for all active members across all gyms. Scheduler is properly configured to run the reset on the 1st of each month."
 
 ## frontend:
   - task: "Landing Page"
