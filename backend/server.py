@@ -211,7 +211,7 @@ async def register_member(member: MemberCreate):
             "id": member_id,
             "name": member.name,
             "phone": member.phone,
-            "joining_date": joining_date,
+            "joining_date": joining_date.isoformat(),  # Convert date to string
             "fee_status": "unpaid",
             "current_month_fee": prorated_fee if prorated_fee > 0 else monthly_fee,
             "payment_method": None,
