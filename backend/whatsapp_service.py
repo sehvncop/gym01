@@ -182,19 +182,19 @@ Reply STOP to unsubscribe from reminders"""
             if not member or not gym_owner:
                 return False
             
-            message = f"""✅ *Payment Confirmed!*
+            message = f"""*Payment Confirmed!*
 
 Hi {member['name']}! 
 
-Your payment of ₹{member['current_month_fee']} has been successfully received.
+Your payment of Rs.{member['current_month_fee']} has been successfully received.
 
-🏋️‍♂️ *{gym_owner['gym_name']}*
-📅 *Payment Date:* {datetime.now().strftime('%d %B %Y')}
-💳 *Method:* {member.get('payment_method', 'Cash').title()}
+*{gym_owner['gym_name']}*
+*Payment Date:* {datetime.now().strftime('%d %B %Y')}
+*Method:* {member.get('payment_method', 'Cash').title()}
 
-Thank you for your prompt payment! Keep up the great work! 💪
+Thank you for your prompt payment! Keep up the great work!
 
-_Reply STOP to unsubscribe from notifications_"""
+Reply STOP to unsubscribe from notifications"""
             
             success = await self.send_message(member["phone"], message)
             
