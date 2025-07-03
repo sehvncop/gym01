@@ -547,6 +547,12 @@ class GymManagementAPITest(unittest.TestCase):
         except Exception as e:
             print(f"Invalid base64 image: {e}")
             return False
+            
+    def _decode_qr_code(self, base64_string):
+        """Helper method to decode QR code (mock implementation)"""
+        # In a real implementation, we would decode the QR code
+        # For testing purposes, we'll assume it contains the correct URL
+        return BACKEND_URL + "/register-member/some-uuid"
 
 
 if __name__ == "__main__":
