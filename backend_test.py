@@ -275,10 +275,8 @@ class GymManagementAPITest(unittest.TestCase):
         
         # First, ensure member has unpaid status
         # Create a new member for this test with valid 10-digit phone
-        cash_suffix = ''.join([str(i) for i in range(10 - len(self.unique_id[:5]))])
-        cash_phone = f"7{self.unique_id[:5].replace('-', '')}{cash_suffix}"
-        if len(cash_phone) > 10:
-            cash_phone = cash_phone[:10]
+        import random
+        cash_phone = ''.join([str(random.randint(0, 9)) for _ in range(10)])
             
         member_data = {
             "name": f"Cash Test Member {self.unique_id}",
