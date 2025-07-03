@@ -278,18 +278,17 @@ class GymManagementAPITest(unittest.TestCase):
             self.test_03_member_registration()
         
         # First, ensure member has unpaid status
-        # Register a new member for this test
+        # Create a new member for this test with valid 10-digit phone
+        cash_suffix = ''.join([str(i) for i in range(10 - len(self.unique_id[:5]))])
+        cash_phone = f"7{self.unique_id[:5].replace('-', '')}{cash_suffix}"
+        if len(cash_phone) > 10:
+            cash_phone = cash_phone[:10]
+            
         member_data = {
             "name": f"Cash Test Member {self.unique_id}",
-            "phone": f"7{self.unique_id.replace('-', '')}789",  # Ensure 10 digits
+            "phone": cash_phone,
             "gym_id": self.gym_id
         }
-        
-        # Fix phone number to ensure it's 10 digits
-        if len(member_data["phone"]) > 10:
-            member_data["phone"] = member_data["phone"][:10]
-        elif len(member_data["phone"]) < 10:
-            member_data["phone"] = member_data["phone"].ljust(10, '0')
         
         # Register new member
         response = requests.post(f"{API_BASE_URL}/member/register", json=member_data)
