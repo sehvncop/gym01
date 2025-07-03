@@ -84,24 +84,24 @@ class WhatsAppService:
         """Generate personalized reminder message"""
         current_month = datetime.now().strftime("%B %Y")
         
-        message = f"""💪 *{gym_info['gym_name']}* 
+        message = f"""*{gym_info['gym_name']}* 
 
-Hi {member['name']}! 👋
+Hi {member['name']}!
 
 This is a friendly reminder that your gym membership fee for {current_month} is due.
 
-💰 *Amount Due:* ₹{member['current_month_fee']}
+*Amount Due:* Rs.{member['current_month_fee']}
 
 *Payment Options:*
-🏪 *Cash Payment:* Visit the gym and pay directly
-💳 *Online Payment:* Use our secure payment link
+- Cash Payment: Visit the gym and pay directly
+- Online Payment: Use our secure payment link
 
-📞 *Contact:* {gym_info['phone']}
-📍 *Address:* {gym_info['address']}
+*Contact:* {gym_info['phone']}
+*Address:* {gym_info['address']}
 
-Thank you for being a valued member! 💪
+Thank you for being a valued member!
 
-_Reply STOP to unsubscribe from reminders_"""
+Reply STOP to unsubscribe from reminders"""
         
         return message
     
