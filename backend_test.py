@@ -19,18 +19,20 @@ class GymManagementAPITest(unittest.TestCase):
         """Setup for tests - generate unique data for each test run"""
         # Generate unique identifiers for this test run
         self.unique_id = str(uuid.uuid4())[:8]
+        
+        # Create a valid 10-digit phone number
+        phone_suffix = ''.join([str(i) for i in range(10 - len(self.unique_id[:5]))])
+        self.phone = f"9{self.unique_id[:5].replace('-', '')}{phone_suffix}"
+        if len(self.phone) > 10:
+            self.phone = self.phone[:10]
+        
         self.gym_owner_data = {
             "name": f"Test Owner {self.unique_id}",
-            "phone": f"9{self.unique_id.replace('-', '')}123",  # Ensure 10 digits
+            "phone": self.phone,
             "gym_name": f"Test Gym {self.unique_id}",
             "address": f"123 Test Street, Test City {self.unique_id}",
             "monthly_fee": 1000.0
         }
-        # Fix phone number to ensure it's 10 digits
-        if len(self.gym_owner_data["phone"]) > 10:
-            self.gym_owner_data["phone"] = self.gym_owner_data["phone"][:10]
-        elif len(self.gym_owner_data["phone"]) < 10:
-            self.gym_owner_data["phone"] = self.gym_owner_data["phone"].ljust(10, '0')
         
         self.gym_id = None
         self.member_id = None
