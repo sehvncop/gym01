@@ -73,7 +73,7 @@ class MemberResponse(BaseModel):
     id: str
     name: str
     phone: str
-    joining_date: date
+    joining_date: str  # Changed from date to str for JSON serialization
     fee_status: str  # 'paid', 'unpaid'
     current_month_fee: float
     payment_method: Optional[str]  # 'cash', 'online', None
