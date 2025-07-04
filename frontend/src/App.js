@@ -652,7 +652,16 @@ const CashPaymentVerification = () => {
     setLoading(true);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/verify-cash-payment/${gymId}?phone=${formData.phone}&name=${formData.name}`, {
+      // Get session ID from URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionId = urlParams.get('session');
+      
+      let url = `${API_BASE_URL}/api/verify-cash-payment/${gymId}?phone=${formData.phone}&name=${formData.name}`;
+      if (sessionId) {
+        url += `&session_id=${sessionId}`;
+      }
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
