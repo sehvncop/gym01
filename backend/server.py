@@ -230,6 +230,10 @@ async def register_gym_owner(owner: GymOwnerCreate):
         if existing_owner:
             raise HTTPException(status_code=400, detail="Phone number already registered")
         
+        # Generate password from DOB + gym_name
+        password = f"{owner.date_of_birth}{owner.gym_name}"
+        password_hash = generate_password_hash(password)
+        
         # Generate unique ID
         gym_id = str(uuid.uuid4())
         
@@ -240,7 +244,7 @@ async def register_gym_owner(owner: GymOwnerCreate):
         qr_code_data = member_registration_url
         qr_code = generate_qr_code(qr_code_data)
         
-        # Cash verification QR
+        # Cash verification QR (initial static one)
         cash_verification_url = f"{FRONTEND_URL}/verify-cash-payment/{gym_id}"
         cash_verification_qr = generate_qr_code(cash_verification_url)
         
@@ -252,9 +256,12 @@ async def register_gym_owner(owner: GymOwnerCreate):
             "gym_name": owner.gym_name,
             "address": owner.address,
             "monthly_fee": owner.monthly_fee,
+            "date_of_birth": owner.date_of_birth,
+            "password_hash": password_hash,
             "qr_code": qr_code,
             "member_registration_url": member_registration_url,
             "cash_verification_qr": cash_verification_qr,
+            "whatsapp_sender_number": owner.phone,  # Default to gym owner's phone
             "created_at": datetime.utcnow()
         }
         
@@ -267,7 +274,11 @@ async def register_gym_owner(owner: GymOwnerCreate):
         # Store collection reference (create index)
         await db[collection_name].create_index("phone", unique=True)
         
-        return GymOwnerResponse(**gym_doc)
+        # Return response (excluding password_hash)
+        return GymOwnerResponse(**{
+            k: v for k, v in gym_doc.items() 
+            if k not in ["password_hash", "date_of_birth"]
+        })
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
