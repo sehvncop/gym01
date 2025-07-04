@@ -94,6 +94,47 @@ class GymManagementAPITest(unittest.TestCase):
         self.assertEqual(data["name"], self.gym_owner_data["name"], "Gym owner name mismatch")
         self.assertEqual(data["gym_name"], self.gym_owner_data["gym_name"], "Gym name mismatch")
         print(f"Successfully retrieved gym owner with ID: {self.gym_id}")
+    def test_01a_gym_owner_login(self):
+        """Test gym owner login API with phone and password (DOB + gym_name)"""
+        print("\n--- Testing Gym Owner Login ---")
+        
+        # Skip if gym_id is not available
+        if not self.gym_id or not self.owner_password:
+            self.test_01_gym_owner_registration()
+        
+        # Test login with correct credentials
+        login_data = {
+            "phone": self.phone,
+            "password": self.owner_password
+        }
+        
+        response = requests.post(f"{API_BASE_URL}/gym-owner/login", json=login_data)
+        self.assertEqual(response.status_code, 200, f"Failed to login: {response.text}")
+        
+        data = response.json()
+        self.assertEqual(data["id"], self.gym_id, "Gym ID mismatch in login response")
+        self.assertEqual(data["phone"], self.phone, "Phone mismatch in login response")
+        print("Successfully logged in with correct credentials")
+        
+        # Test login with incorrect password
+        invalid_login = {
+            "phone": self.phone,
+            "password": "wrong_password"
+        }
+        
+        response = requests.post(f"{API_BASE_URL}/gym-owner/login", json=invalid_login)
+        self.assertEqual(response.status_code, 401, "Invalid password should return 401")
+        print("Invalid password check passed")
+        
+        # Test login with non-existent phone
+        nonexistent_login = {
+            "phone": "9999999999",  # Assuming this phone doesn't exist
+            "password": self.owner_password
+        }
+        
+        response = requests.post(f"{API_BASE_URL}/gym-owner/login", json=nonexistent_login)
+        self.assertEqual(response.status_code, 401, "Non-existent phone should return 401")
+        print("Non-existent phone check passed")
         
         # Test non-existent gym owner
         fake_id = str(uuid.uuid4())
