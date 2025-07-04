@@ -9,6 +9,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginForm />} />
         <Route path="/register" element={<RegistrationForm />} />
         <Route path="/dashboard" element={<DashboardWrapper />} />
         <Route path="/register-member/:gymId" element={<MemberRegistrationForm />} />
