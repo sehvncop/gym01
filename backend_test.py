@@ -26,16 +26,19 @@ class GymManagementAPITest(unittest.TestCase):
         self.phone = ''.join([str(random.randint(0, 9)) for _ in range(10)])
         
         self.unique_id = str(uuid.uuid4())[:8]
+        self.date_of_birth = "1990-01-01"  # Added date_of_birth for enhanced registration
         self.gym_owner_data = {
             "name": f"Test Owner {self.unique_id}",
             "phone": self.phone,
             "gym_name": f"Test Gym {self.unique_id}",
             "address": f"123 Test Street, Test City {self.unique_id}",
-            "monthly_fee": 1000.0
+            "monthly_fee": 1000.0,
+            "date_of_birth": self.date_of_birth  # Added date_of_birth field
         }
         
         self.gym_id = None
         self.member_id = None
+        self.owner_password = None  # To store the generated password
         
         # Mock Razorpay data
         self.razorpay_order_id = f"order_{uuid.uuid4()}"
