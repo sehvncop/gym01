@@ -1134,8 +1134,23 @@ const Dashboard = ({ gymOwner, setGymOwner, members, setMembers, loading, setLoa
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <button
+                          onClick={() => sendManualNotification(member.id, member.name)}
+                          className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700"
+                          title="Send WhatsApp Notification"
+                        >
+                          📱 Notify
+                        </button>
+                        
                         {member.fee_status === 'unpaid' && (
                           <>
+                            <button
+                              onClick={() => generatePaymentQR(member.id, member.name, member.current_month_fee)}
+                              className="bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700"
+                              title="Generate Payment QR"
+                            >
+                              QR Pay
+                            </button>
                             <button
                               onClick={() => markAsPaid(member.id, 'cash')}
                               className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700"
@@ -1150,6 +1165,7 @@ const Dashboard = ({ gymOwner, setGymOwner, members, setMembers, loading, setLoa
                             </button>
                           </>
                         )}
+                        
                         <button
                           onClick={() => toggleMemberStatus(member.id)}
                           className={`px-3 py-1 rounded text-xs ${
@@ -1159,6 +1175,14 @@ const Dashboard = ({ gymOwner, setGymOwner, members, setMembers, loading, setLoa
                           }`}
                         >
                           {member.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                        
+                        <button
+                          onClick={() => deleteMember(member.id, member.name)}
+                          className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700"
+                          title="Delete Member"
+                        >
+                          🗑️ Delete
                         </button>
                       </td>
                     </tr>
