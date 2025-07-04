@@ -11,7 +11,7 @@ from io import BytesIO
 from PIL import Image
 
 # Get the backend URL from the frontend .env file
-BACKEND_URL = "https://5d34af7c-83d6-445f-b180-77e8b539ea1b.preview.emergentagent.com"
+BACKEND_URL = "https://0cf6be34-b876-434f-aa94-c1aa7e402d48.preview.emergentagent.com"
 API_BASE_URL = f"{BACKEND_URL}/api"
 
 class GymManagementAPITest(unittest.TestCase):
