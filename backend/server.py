@@ -145,6 +145,19 @@ def generate_qr_code(data: str) -> str:
     
     return base64.b64encode(buffer.getvalue()).decode()
 
+def generate_payment_session_qr(gym_id: str, session_id: str) -> str:
+    """Generate dynamic QR code for payment session"""
+    payment_url = f"{FRONTEND_URL}/verify-cash-payment/{gym_id}?session={session_id}"
+    return generate_qr_code(payment_url)
+
+def generate_password_hash(password: str) -> str:
+    """Generate password hash using bcrypt"""
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(password: str, hashed: str) -> bool:
+    """Verify password against hash"""
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
 def calculate_prorated_fee(monthly_fee: float, joining_date: date) -> float:
     """Calculate prorated fee based on joining date"""
     today = date.today()
