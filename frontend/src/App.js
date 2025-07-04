@@ -288,7 +288,8 @@ const RegistrationForm = () => {
     phone: '',
     gym_name: '',
     address: '',
-    monthly_fee: ''
+    monthly_fee: '',
+    date_of_birth: ''
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
