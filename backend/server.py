@@ -58,12 +58,17 @@ class GymOwnerCreate(BaseModel):
     gym_name: str
     address: str
     monthly_fee: float
+    date_of_birth: str  # Will be combined with gym_name for password
     
     @validator('phone')
     def validate_phone(cls, v):
         if not v.isdigit() or len(v) != 10:
             raise ValueError('Phone number must be 10 digits')
         return v
+
+class GymOwnerLogin(BaseModel):
+    phone: str
+    password: str  # DOB + gym_name
 
 class GymOwnerResponse(BaseModel):
     id: str
@@ -75,6 +80,7 @@ class GymOwnerResponse(BaseModel):
     qr_code: str
     member_registration_url: str
     cash_verification_qr: str
+    whatsapp_sender_number: str
     created_at: datetime
 
 class MemberCreate(BaseModel):
