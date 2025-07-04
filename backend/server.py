@@ -774,15 +774,98 @@ async def reset_monthly_fees():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# WhatsApp integration endpoints (placeholders for now)
+# WhatsApp integration endpoints
 @app.get("/api/whatsapp/status")
 async def get_whatsapp_status():
     """Get WhatsApp integration status"""
     return {
         "connected": False,
-        "message": "WhatsApp integration not configured",
-        "instructions": "WhatsApp automation for monthly reminders will be available once configured"
+        "message": "WhatsApp Web automation ready",
+        "instructions": "WhatsApp notifications will be sent through web automation",
+        "queue_size": await db.notification_queue.count_documents({"status": "pending"})
     }
+
+@app.get("/api/whatsapp/queue")
+async def get_notification_queue():
+    """Get pending notifications for WhatsApp automation"""
+    try:
+        # Check rate limiting
+        current_hour = datetime.utcnow().hour
+        today = datetime.utcnow().date()
+        
+        # Count notifications sent in current hour
+        hour_start = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+        hour_count = await db.notification_queue.count_documents({
+            "status": "sent",
+            "sent_at": {"$gte": hour_start}
+        })
+        
+        # Count notifications sent today
+        day_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        day_count = await db.notification_queue.count_documents({
+            "status": "sent",
+            "sent_at": {"$gte": day_start}
+        })
+        
+        # Apply rate limiting (40-50 per hour, 250 per day)
+        import random
+        max_per_hour = random.randint(40, 50)
+        max_per_day = 250
+        
+        if hour_count >= max_per_hour:
+            return {
+                "notifications": [],
+                "rate_limited": True,
+                "message": f"Hourly limit reached ({hour_count}/{max_per_hour}). Try again next hour."
+            }
+        
+        if day_count >= max_per_day:
+            return {
+                "notifications": [],
+                "rate_limited": True,
+                "message": f"Daily limit reached ({day_count}/{max_per_day}). Try again tomorrow."
+            }
+        
+        # Get pending notifications
+        remaining_slots = min(max_per_hour - hour_count, max_per_day - day_count, 10)  # Max 10 at a time
+        
+        notifications_cursor = db.notification_queue.find({
+            "status": "pending"
+        }).limit(remaining_slots)
+        
+        notifications = await notifications_cursor.to_list(length=remaining_slots)
+        
+        return {
+            "notifications": notifications,
+            "rate_limited": False,
+            "hour_count": hour_count,
+            "day_count": day_count,
+            "max_per_hour": max_per_hour,
+            "max_per_day": max_per_day
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/whatsapp/update-status/{notification_id}")
+async def update_notification_status(notification_id: str, status: str):
+    """Update notification status after sending"""
+    try:
+        update_data = {"status": status}
+        if status == "sent":
+            update_data["sent_at"] = datetime.utcnow()
+        elif status == "failed":
+            update_data["failed_at"] = datetime.utcnow()
+        
+        await db.notification_queue.update_one(
+            {"id": notification_id},
+            {"$set": update_data}
+        )
+        
+        return {"message": "Status updated successfully"}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/whatsapp/send-reminders")
 async def send_monthly_reminders():
