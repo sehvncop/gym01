@@ -684,7 +684,7 @@ async def razorpay_webhook(request: Request):
 
 # Cash payment verification endpoint
 @app.post("/api/verify-cash-payment/{gym_id}")
-async def verify_cash_payment(gym_id: str, phone: str, name: str):
+async def verify_cash_payment(gym_id: str, phone: str, name: str, session_id: Optional[str] = None):
     """Verify cash payment"""
     try:
         # Get collection name
@@ -700,6 +700,22 @@ async def verify_cash_payment(gym_id: str, phone: str, name: str):
         if not member:
             raise HTTPException(status_code=404, detail="Member not found")
         
+        # If session_id is provided, verify and update session
+        if session_id:
+            session = await db.payment_sessions.find_one({"session_id": session_id})
+            if not session:
+                raise HTTPException(status_code=404, detail="Invalid payment session")
+            
+            # Check if session is expired
+            if session["expires_at"] < datetime.utcnow().timestamp():
+                raise HTTPException(status_code=400, detail="Payment session expired")
+            
+            # Update session status
+            await db.payment_sessions.update_one(
+                {"session_id": session_id},
+                {"$set": {"status": "completed", "completed_at": datetime.utcnow()}}
+            )
+        
         # Mark as paid
         await members_collection.update_one(
             {"id": member["id"]},
@@ -707,7 +723,8 @@ async def verify_cash_payment(gym_id: str, phone: str, name: str):
                 "$set": {
                     "fee_status": "paid",
                     "payment_method": "cash",
-                    "payment_updated_at": datetime.utcnow()
+                    "payment_updated_at": datetime.utcnow(),
+                    "payment_session_id": session_id if session_id else None
                 }
             }
         )
