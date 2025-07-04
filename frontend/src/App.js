@@ -155,6 +155,132 @@ const HomePage = () => {
   );
 };
 
+// Login Form Component
+const LoginForm = () => {
+  const [formData, setFormData] = useState({
+    phone: '',
+    password: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/gym-owner/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const ownerData = await response.json();
+        // Store gym owner data in localStorage
+        localStorage.setItem('gymOwner', JSON.stringify(ownerData));
+        navigate('/dashboard');
+      } else {
+        const errorData = await response.json();
+        alert(`Login failed: ${errorData.detail}`);
+      }
+    } catch (error) {
+      alert('Login failed. Please try again.');
+      console.error('Login error:', error);
+    }
+    
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <div className="mx-auto h-12 w-12 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-xl">G</span>
+          </div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Login to Your Gym
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Access your gym management dashboard
+          </p>
+        </div>
+        
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+              <input
+                type="tel"
+                name="phone"
+                required
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="Your registered phone number"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <input
+                type="password"
+                name="password"
+                required
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Date of birth + gym name"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Password format: YYYY-MM-DD followed by your gym name (e.g., 1990-01-15MyGymName)
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
+          </div>
+          
+          <div className="text-center space-y-2">
+            <button
+              type="button"
+              onClick={() => navigate('/register')}
+              className="text-indigo-600 hover:text-indigo-500 text-sm"
+            >
+              Don't have an account? Register here
+            </button>
+            <br />
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="text-gray-600 hover:text-gray-500 text-sm"
+            >
+              ← Back to Home
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // Registration Form Component
 const RegistrationForm = () => {
   const [formData, setFormData] = useState({
