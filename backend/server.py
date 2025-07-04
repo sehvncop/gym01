@@ -197,6 +197,30 @@ def verify_razorpay_signature(order_id: str, payment_id: str, signature: str) ->
 async def root():
     return {"message": "Gym Management SaaS API", "status": "running"}
 
+@app.post("/api/gym-owner/login")
+async def login_gym_owner(credentials: GymOwnerLogin):
+    """Login gym owner"""
+    try:
+        # Find gym owner by phone
+        gym_owner = await db.gym_owners.find_one({"phone": credentials.phone})
+        if not gym_owner:
+            raise HTTPException(status_code=401, detail="Invalid phone number or password")
+        
+        # Verify password
+        if not verify_password(credentials.password, gym_owner["password_hash"]):
+            raise HTTPException(status_code=401, detail="Invalid phone number or password")
+        
+        # Return gym owner data (excluding password)
+        return GymOwnerResponse(**{
+            k: v for k, v in gym_owner.items() 
+            if k != "password_hash"
+        })
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/gym-owner/register", response_model=GymOwnerResponse)
 async def register_gym_owner(owner: GymOwnerCreate):
     """Register a new gym owner"""
