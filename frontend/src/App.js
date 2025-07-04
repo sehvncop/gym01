@@ -837,6 +837,94 @@ const Dashboard = ({ gymOwner, setGymOwner, members, setMembers, loading, setLoa
     }
   };
 
+  const deleteMember = async (memberId, memberName) => {
+    if (window.confirm(`Are you sure you want to delete ${memberName}? This action cannot be undone.`)) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/member/${gymOwner.id}/${memberId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          loadMembers(); // Refresh members list
+          alert('Member deleted successfully');
+        } else {
+          alert('Failed to delete member');
+        }
+      } catch (error) {
+        alert('Error deleting member');
+        console.error('Delete member error:', error);
+      }
+    }
+  };
+
+  const sendManualNotification = async (memberId, memberName) => {
+    const customMessage = prompt(`Enter custom message for ${memberName} (or leave empty for default):`);
+    if (customMessage !== null) { // User didn't cancel
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/gym/${gymOwner.id}/send-notification/${memberId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            member_id: memberId,
+            custom_message: customMessage || undefined 
+          }),
+        });
+
+        if (response.ok) {
+          alert('Notification added to queue');
+        } else {
+          alert('Failed to send notification');
+        }
+      } catch (error) {
+        alert('Error sending notification');
+        console.error('Send notification error:', error);
+      }
+    }
+  };
+
+  const generatePaymentQR = async (memberId, memberName, amount) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/gym/${gymOwner.id}/generate-payment-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          member_id: memberId,
+          amount: amount 
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Create a modal to show the QR code
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        modal.innerHTML = `
+          <div class="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 class="text-lg font-semibold mb-4">Payment QR Code for ${memberName}</h3>
+            <div class="text-center mb-4">
+              <img src="data:image/png;base64,${data.qr_code}" alt="Payment QR" class="w-64 h-64 mx-auto border" />
+            </div>
+            <p class="text-sm text-gray-600 mb-4">Amount: ₹${amount}</p>
+            <p class="text-xs text-gray-500 mb-4">QR expires in 30 minutes</p>
+            <button onclick="this.parentElement.parentElement.remove()" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">
+              Close
+            </button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      } else {
+        alert('Failed to generate payment QR');
+      }
+    } catch (error) {
+      alert('Error generating payment QR');
+      console.error('Generate payment QR error:', error);
+    }
+  };
+
   const totalMembers = members.length;
   const paidMembers = members.filter(m => m.fee_status === 'paid').length;
   const unpaidMembers = members.filter(m => m.fee_status === 'unpaid').length;
