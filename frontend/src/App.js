@@ -439,11 +439,19 @@ const RegistrationForm = () => {
             </button>
           </div>
           
-          <div className="text-center">
+          <div className="text-center space-y-2">
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="text-indigo-600 hover:text-indigo-500 text-sm"
+            >
+              Already have an account? Login here
+            </button>
+            <br />
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="text-indigo-600 hover:text-indigo-500 text-sm"
+              className="text-gray-600 hover:text-gray-500 text-sm"
             >
               ← Back to Home
             </button>
