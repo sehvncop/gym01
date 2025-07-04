@@ -963,7 +963,7 @@ const Dashboard = ({ gymOwner, setGymOwner, members, setMembers, loading, setLoa
       <nav className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
-            {['overview', 'members', 'qr-codes', 'payments'].map((tab) => (
+            {['overview', 'members', 'qr-codes', 'whatsapp', 'payments'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
