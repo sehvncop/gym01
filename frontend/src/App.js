@@ -1245,18 +1245,116 @@ const Dashboard = ({ gymOwner, setGymOwner, members, setMembers, loading, setLoa
               </div>
             </div>
 
-            {/* WhatsApp Integration Status */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
+            {/* WhatsApp Configuration */}
+            <div className="space-y-6">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-green-800">WhatsApp Web Automation</h3>
+                      <div className="mt-2 text-sm text-green-700">
+                        <p>Automated notifications ready. Rate limit: 40-50 messages/hour, 250/day</p>
+                        <p className="mt-1">Current sender: {gymOwner?.whatsapp_sender_number || gymOwner?.phone}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => window.open('/api/whatsapp/automation-instructions', '_blank')}
+                    className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700"
+                  >
+                    Setup Guide
+                  </button>
                 </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">WhatsApp Integration Ready</h3>
-                  <div className="mt-2 text-sm text-yellow-700">
-                    <p>Automated monthly fee reminders will be enabled once WhatsApp is configured.</p>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">WhatsApp Settings</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      WhatsApp Business Number
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="tel"
+                        defaultValue={gymOwner?.whatsapp_sender_number || gymOwner?.phone}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="Enter WhatsApp business number"
+                        id="whatsapp-number"
+                      />
+                      <button
+                        onClick={async () => {
+                          const number = document.getElementById('whatsapp-number').value;
+                          if (number) {
+                            try {
+                              const response = await fetch(`${API_BASE_URL}/api/gym/${gymOwner.id}/whatsapp-config`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ sender_number: number })
+                              });
+                              if (response.ok) {
+                                alert('WhatsApp number updated successfully');
+                                // Update gymOwner data
+                                const updatedGymOwner = { ...gymOwner, whatsapp_sender_number: number };
+                                setGymOwner(updatedGymOwner);
+                                localStorage.setItem('gymOwner', JSON.stringify(updatedGymOwner));
+                              } else {
+                                alert('Failed to update WhatsApp number');
+                              }
+                            } catch (error) {
+                              alert('Error updating WhatsApp number');
+                            }
+                          }
+                        }}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                      >
+                        Update
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`${API_BASE_URL}/api/whatsapp/send-reminders`, {
+                            method: 'POST'
+                          });
+                          if (response.ok) {
+                            alert('Monthly reminders generated and added to queue');
+                          } else {
+                            alert('Failed to generate reminders');
+                          }
+                        } catch (error) {
+                          alert('Error generating reminders');
+                        }
+                      }}
+                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    >
+                      Generate Monthly Reminders
+                    </button>
+                    
+                    <button
+                      onClick={() => window.open('https://web.whatsapp.com', '_blank')}
+                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                    >
+                      Open WhatsApp Web
+                    </button>
+                  </div>
+                  
+                  <div className="text-sm text-gray-600">
+                    <p><strong>Setup Instructions:</strong></p>
+                    <ol className="list-decimal list-inside mt-2 space-y-1">
+                      <li>Open WhatsApp Web and scan QR code with your phone</li>
+                      <li>Keep WhatsApp Web tab open for automation</li>
+                      <li>Generate monthly reminders using the button above</li>
+                      <li>Use notification buttons in member list for manual messages</li>
+                    </ol>
                   </div>
                 </div>
               </div>
