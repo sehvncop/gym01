@@ -46,7 +46,7 @@ class GymManagementAPITest(unittest.TestCase):
         self.razorpay_signature = "mock_signature"
     
     def test_01_gym_owner_registration(self):
-        """Test gym owner registration API"""
+        """Test gym owner registration API with date_of_birth field"""
         print("\n--- Testing Gym Owner Registration ---")
         
         # Test registration
@@ -61,6 +61,10 @@ class GymManagementAPITest(unittest.TestCase):
         # Store gym_id for subsequent tests
         self.gym_id = data["id"]
         print(f"Successfully registered gym owner with ID: {self.gym_id}")
+        
+        # Store password for login test (DOB + gym_name)
+        self.owner_password = f"{self.date_of_birth}{self.gym_owner_data['gym_name']}"
+        print(f"Generated password format: DOB + gym_name")
         
         # Verify QR code is valid base64
         self.assertTrue(self._is_valid_base64_image(data["qr_code"]), "QR code is not a valid base64 image")
