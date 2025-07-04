@@ -120,6 +120,17 @@ class RazorpayPaymentVerify(BaseModel):
     member_id: str
     gym_id: str
 
+class WhatsAppConfig(BaseModel):
+    sender_number: str
+
+class SendNotificationRequest(BaseModel):
+    member_id: str
+    custom_message: Optional[str] = None
+
+class PaymentSessionRequest(BaseModel):
+    member_id: str
+    amount: float
+
 # Utility functions
 def generate_qr_code(data: str) -> str:
     """Generate QR code and return as base64 string"""
