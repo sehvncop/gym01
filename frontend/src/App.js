@@ -1245,6 +1245,14 @@ const Dashboard = ({ gymOwner, setGymOwner, members, setMembers, loading, setLoa
               </div>
             </div>
 
+          </div>
+        )}
+
+        {/* WhatsApp Tab */}
+        {activeTab === 'whatsapp' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">WhatsApp Automation</h2>
+            
             {/* WhatsApp Configuration */}
             <div className="space-y-6">
               <div className="bg-green-50 border border-green-200 rounded-lg p-6">
