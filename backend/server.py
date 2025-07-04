@@ -869,12 +869,35 @@ async def update_notification_status(notification_id: str, status: str):
 
 @app.post("/api/whatsapp/send-reminders")
 async def send_monthly_reminders():
-    """Send monthly fee reminders to unpaid members"""
-    return {
-        "message": "WhatsApp reminders not configured",
-        "instructions": "WhatsApp automation will be available once configured",
-        "status": "not_configured"
-    }
+    """Generate monthly fee reminders for unpaid members"""
+    try:
+        from whatsapp_automation import whatsapp_automation
+        
+        await whatsapp_automation.generate_monthly_reminders()
+        
+        # Get queue status
+        queue_size = await db.notification_queue.count_documents({"status": "pending"})
+        
+        return {
+            "message": "Monthly reminders generated successfully",
+            "status": "success",
+            "queue_size": queue_size,
+            "instructions": "Use WhatsApp Web automation to send notifications"
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/whatsapp/automation-instructions")
+async def get_automation_instructions():
+    """Get WhatsApp automation setup instructions"""
+    try:
+        from whatsapp_automation import whatsapp_automation
+        
+        return whatsapp_automation.get_whatsapp_automation_instructions()
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
