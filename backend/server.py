@@ -434,6 +434,102 @@ async def delete_member(gym_id: str, member_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/gym/{gym_id}/generate-payment-session")
+async def generate_payment_session(gym_id: str, request: PaymentSessionRequest):
+    """Generate dynamic QR code for payment session"""
+    try:
+        # Verify gym exists
+        gym_owner = await db.gym_owners.find_one({"id": gym_id})
+        if not gym_owner:
+            raise HTTPException(status_code=404, detail="Gym not found")
+        
+        # Generate unique session ID
+        session_id = str(uuid.uuid4())
+        
+        # Create payment session
+        payment_session = {
+            "session_id": session_id,
+            "gym_id": gym_id,
+            "member_id": request.member_id,
+            "amount": request.amount,
+            "status": "pending",
+            "expires_at": datetime.utcnow().timestamp() + 1800,  # 30 minutes
+            "created_at": datetime.utcnow()
+        }
+        
+        # Store payment session
+        await db.payment_sessions.insert_one(payment_session)
+        
+        # Generate dynamic QR code
+        qr_code = generate_payment_session_qr(gym_id, session_id)
+        
+        return {
+            "session_id": session_id,
+            "qr_code": qr_code,
+            "verification_url": f"{FRONTEND_URL}/verify-cash-payment/{gym_id}?session={session_id}",
+            "expires_at": payment_session["expires_at"]
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/gym/{gym_id}/whatsapp-config")
+async def update_whatsapp_config(gym_id: str, config: WhatsAppConfig):
+    """Update WhatsApp sender number configuration"""
+    try:
+        # Update gym owner's WhatsApp sender number
+        update_result = await db.gym_owners.update_one(
+            {"id": gym_id},
+            {"$set": {"whatsapp_sender_number": config.sender_number}}
+        )
+        
+        if update_result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Gym not found")
+        
+        return {"message": "WhatsApp sender number updated successfully"}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/gym/{gym_id}/send-notification/{member_id}")
+async def send_manual_notification(gym_id: str, member_id: str, request: SendNotificationRequest):
+    """Send manual notification to a member"""
+    try:
+        # Get gym owner and member details
+        gym_owner = await db.gym_owners.find_one({"id": gym_id})
+        if not gym_owner:
+            raise HTTPException(status_code=404, detail="Gym not found")
+        
+        collection_name = f"gym_{gym_id.replace('-', '_')}_members"
+        members_collection = db[collection_name]
+        member = await members_collection.find_one({"id": member_id})
+        
+        if not member:
+            raise HTTPException(status_code=404, detail="Member not found")
+        
+        # Create notification entry for WhatsApp automation
+        notification = {
+            "id": str(uuid.uuid4()),
+            "gym_id": gym_id,
+            "member_id": member_id,
+            "phone": member["phone"],
+            "member_name": member["name"],
+            "gym_name": gym_owner["gym_name"],
+            "sender_number": gym_owner.get("whatsapp_sender_number", gym_owner["phone"]),
+            "message": request.custom_message or f"Hi {member['name']}! This is a reminder from {gym_owner['gym_name']}. Please contact us for any queries.",
+            "status": "pending",
+            "type": "manual",
+            "created_at": datetime.utcnow()
+        }
+        
+        # Store notification in queue
+        await db.notification_queue.insert_one(notification)
+        
+        return {"message": "Notification added to queue", "notification_id": notification["id"]}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Razorpay integration endpoints
 @app.post("/api/payment/create-order")
 async def create_payment_order(order_data: RazorpayOrderCreate, gym_id: str, member_id: str):
