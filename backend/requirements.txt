@@ -27,3 +27,5 @@ qrcode[pil]>=7.4.2
 razorpay>=1.4.2
 python-crontab>=3.2.0
 schedule>=1.2.2
+bcrypt>=4.0.1
+httpx>=0.25.0
